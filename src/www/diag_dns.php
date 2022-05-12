@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $input_errors[] = gettext("Host must be a valid hostname or IP address.");
     }
     if (count($input_errors) == 0) {
-        $command_args = ""
+        $command_args = "";
         $srcip = '';
         if (!empty($ifaddr)) {
             $command_args .= exec_safe('-I %s ', $ifaddr);
