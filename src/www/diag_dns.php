@@ -94,7 +94,7 @@ include("head.inc"); ?>
                   <tr>
                     <td style="width: 22%"><?=gettext("Hostname or IP");?></td>
                     <td>
-                      <input name="host" type="text" value="<?=htmlspecialchars($host);?>" />
+                      <input name="host" type="text" value="<?=htmlspecialchars($pconfig['host']);?>" />
                     </td>
                   </tr>
                   <tr>
