@@ -28,38 +28,53 @@
  */
 
 require_once("guiconfig.inc");
+require_once("system.inc");
+require_once("interfaces.inc");
 
 $resolved = array();
 $dns_speeds = array();
-if (!empty($_REQUEST['host'])) {
-    $input_errors = array();
-    $host = trim($_REQUEST['host'], " \t\n\r\0\x0B[];\"'");
-    $host_esc = escapeshellarg($host);
 
-    if (!is_hostname($host) && !is_ipaddr($host)) {
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    // set form defaults
+    $pconfig = array();
+    $pconfig['host'] = isset($_GET['host']) ? $_GET['host'] : null;
+    $pconfig['interface'] = isset($_GET['interface']) ? $_GET['interface'] : null;
+} elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // validate formdata and schedule action
+    $pconfig = $_POST;
+    $input_errors = array();
+    /* input validation */
+    $reqdfields = array("host");
+    $reqdfieldsn = array(gettext("Host"));
+    do_input_validation($pconfig, $reqdfields, $reqdfieldsn, $input_errors);
+    if (!is_hostname($pconfig['host']) && !is_ipaddr($pconfig['host'])) {
         $input_errors[] = gettext("Host must be a valid hostname or IP address.");
-    } else {
+    }
+    if (count($input_errors) == 0) {
+        $command_args = ""
+        $srcip = '';
+        if (!empty($ifaddr)) {
+            $command_args .= exec_safe('-I %s ', $ifaddr);
+        }
         // Test resolution speed of each DNS server.
         $dns_servers = array();
         exec("/usr/bin/grep nameserver /etc/resolv.conf | /usr/bin/cut -f2 -d' '", $dns_servers);
         foreach ($dns_servers as $dns_server) {
-            $query_time = exec("/usr/bin/drill {$host_esc} " . escapeshellarg("@" . trim($dns_server)) . " | /usr/bin/grep Query | /usr/bin/cut -d':' -f2");
+            $query_time = exec("/usr/bin/drill " . $command_args . " " . $pconfig['host'] . " " . escapeshellarg("@" . trim($dns_server)) . " | /usr/bin/grep Query | /usr/bin/cut -d':' -f2");
             if ($query_time == "") {
                 $query_time = gettext("No response");
             }
             $dns_speeds[] = array('dns_server' => $dns_server, 'query_time' => $query_time);
         }
-    }
-
-    if (count($input_errors) == 0) {
-        if (is_ipaddr($host)) {
-            $resolved[] = "PTR " . gethostbyaddr($host);
-        } elseif (is_hostname($host)) {
-            exec("(/usr/bin/drill {$host_esc} AAAA; /usr/bin/drill {$host_esc} A) | /usr/bin/grep 'IN' | /usr/bin/grep -v ';' | /usr/bin/grep -v 'SOA' | /usr/bin/awk '{ print $4 \" \" $5 }'", $resolved);
+        if (is_ipaddr($pconfig['host'])) {
+            $resolved[] = "PTR " . gethostbyaddr($pconfig['host']);
+        } elseif (is_hostname($pconfig['host'])) {
+            exec("(/usr/bin/drill " . $pconfig['host'] . " AAAA; /usr/bin/drill " . $pconfig['host'] . " A) | /usr/bin/grep 'IN' | /usr/bin/grep -v ';' | /usr/bin/grep -v 'SOA' | /usr/bin/awk '{ print $4 \" \" $5 }'", $resolved);
         }
     }
 }
 
+legacy_html_escape_form_data($pconfig);
 include("head.inc"); ?>
 <body>
 <?php include("fbegin.inc"); ?>
@@ -80,6 +95,19 @@ include("head.inc"); ?>
                     <td style="width: 22%"><?=gettext("Hostname or IP");?></td>
                     <td>
                       <input name="host" type="text" value="<?=htmlspecialchars($host);?>" />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><?=gettext("Source Address"); ?></td>
+                    <td>
+                      <select name="interface" class="selectpicker">
+                        <option value=""><?= gettext('Default') ?></option>
+<?php foreach (get_configured_interface_with_descr() as $ifname => $ifdescr): ?>
+                        <option value="<?= html_safe($ifname) ?>" <?=!link_interface_to_bridge($ifname) && $ifname == $pconfig['interface'] ? 'selected="selected"' : '' ?>>
+                          <?= htmlspecialchars($ifdescr) ?>
+                        </option>
+<?php endforeach ?>
+                      </select>
                     </td>
                   </tr>
 <?php
