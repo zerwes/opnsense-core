@@ -60,8 +60,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $dns_servers = array();
         exec("/usr/bin/grep nameserver /etc/resolv.conf | /usr/bin/cut -f2 -d' '", $dns_servers);
         foreach ($dns_servers as $dns_server) {
-            $query_time = exec("/usr/bin/drill " . $command_args . " " . $pconfig['host'] . " " . escapeshellarg("@" . trim($dns_server)) . " | /usr/bin/grep Query | /usr/bin/cut -d':' -f2");
-            if ($query_time == "") {
+            exec("/usr/bin/drill " . $command_args . " " . $pconfig['host'] . " " . escapeshellarg("@" . trim($dns_server)) . " | /usr/bin/grep Query | /usr/bin/cut -d':' -f2", $query_time, $retval);
+            if ($retval > 0) {
+                $input_errors[] = "command exit code: $retval";
+            } elseif ($query_time == "") {
                 $query_time = gettext("No response");
             }
             $dns_speeds[] = array('dns_server' => $dns_server, 'query_time' => $query_time);
