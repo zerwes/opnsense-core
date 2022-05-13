@@ -38,6 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $pconfig = array();
     $pconfig['host'] = isset($_GET['host']) ? $_GET['host'] : null;
     $pconfig['interface'] = isset($_GET['interface']) ? $_GET['interface'] : null;
+    $pconfig['dnsserverinput'] = isset($_GET['dnsserverinput']) ? $_GET['dnsserverinput'] : null;
 } elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // validate formdata and schedule action
     $pconfig = $_POST;
@@ -51,25 +52,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     }
     if (count($input_errors) == 0) {
         $command_args = "";
-        $srcip = '';
+	list ($ifaddr) = interfaces_primary_address($pconfig['interface']);
         if (!empty($ifaddr)) {
             $command_args .= exec_safe(' -I %s ', $ifaddr);
         }
         if (is_ipaddr($pconfig['host'])) {
 	    $command_args .= ' -x ';
         }
-        // Test resolution speed of each DNS server.
         $dns_servers = array();
-        exec("/usr/bin/grep nameserver /etc/resolv.conf | /usr/bin/cut -f2 -d' '", $dns_servers);
+	if (strlen($pconfig['dnsserverinput']) > 0) {
+	    $dns_servers = explode(' ', $pconfig['dnsserverinput']);
+	} else {
+            exec("/usr/bin/grep nameserver /etc/resolv.conf | /usr/bin/cut -f2 -d' '", $dns_servers);
+	}
         foreach ($dns_servers as $dns_server) {
+            if (!is_hostname($dns_server) && !is_ipaddr($dns_server)) {
+                $input_errors[] = gettext("DNS Server must be a valid hostname or IP address.") . " " . $dns_server;
+            }
             $queryoutput = [];
 	    $query_time = "";
 	    $dnsrcode = "";
 	    $dnsanswer = "";
 	    $dnssoa = "";
-            exec("/usr/bin/drill " . $command_args . " " . $pconfig['host'] . " " . escapeshellarg("@" . trim($dns_server)), $queryoutput, $retval);
+            exec("/usr/bin/drill " . $command_args . " " . $pconfig['host'] . " " . escapeshellarg("@" . trim($dns_server)) . " 2>&1", $queryoutput, $retval);
             if ($retval > 0) {
-                $input_errors[] = "command exit code: $retval";
+                $input_errors[] = "command exit code: $retval for server $dns_server : " . join(' ', $queryoutput);
 		continue;
             }
             for ($i = 0; $i < count($queryoutput); $i++) {
@@ -101,11 +108,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 		'answer' => $dnsanswer,
 		);
         }
-        if (is_ipaddr($pconfig['host'])) {
-            $resolved[] = "PTR " . gethostbyaddr($pconfig['host']);
-        } elseif (is_hostname($pconfig['host'])) {
-            exec("(/usr/bin/drill " . $pconfig['host'] . " AAAA; /usr/bin/drill " . $pconfig['host'] . " A) | /usr/bin/grep 'IN' | /usr/bin/grep -v ';' | /usr/bin/grep -v 'SOA' | /usr/bin/awk '{ print $4 \" \" $5 }'", $resolved);
-        }
     }
 }
 
@@ -123,13 +125,20 @@ include("head.inc"); ?>
             <header class="content-box-head container-fluid">
               <h3><?=gettext("Resolve DNS hostname or IP");?></h3>
             </header>
+	    <pre><? print_r($resolved); ?></pre>
             <div class="table-responsive">
-              <table class="table table-striped">
+              <table class="table table-striped opnsense_standard_table_form">
                 <tbody>
                   <tr>
                     <td style="width: 22%"><?=gettext("Hostname or IP");?></td>
                     <td>
                       <input name="host" type="text" value="<?=htmlspecialchars($pconfig['host']);?>" />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="width: 22%"><?=gettext("DNS Server");?></td>
+                    <td>
+                      <input name="dnsserverinput" type="text" value="<?=htmlspecialchars($pconfig['dnsserverinput']);?>" />
                     </td>
                   </tr>
                   <tr>
