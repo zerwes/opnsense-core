@@ -68,7 +68,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 	    $dnsanswer = "";
 	    $dnssoa = "";
             exec("/usr/bin/drill " . $command_args . " " . $pconfig['host'] . " " . escapeshellarg("@" . trim($dns_server)), $queryoutput, $retval);
-            //$input_errors[] = print_r($queryoutput, true);
             if ($retval > 0) {
                 $input_errors[] = "command exit code: $retval";
 		continue;
@@ -80,12 +79,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 		    $dnsrcode = trim(explode(': ', $larr[1])[1]);
 		} elseif (strpos($qoutline, 'ANSWER SECTION:')) {
 		    if (strlen(trim($queryoutput[$i+1])) > 0) {
-		        $dnsanswer = trim(explode('IN', $queryoutput[$i+1])[1]);
+			$dnsa = preg_split('/\s+/', trim($queryoutput[$i+1]));
+		        $dnsanswer = $dnsa[3]." ".$dnsa[4];
 		    }
 		} elseif (strpos($qoutline, 'AUTHORITY SECTION:')) {
 		    if (strlen(trim($queryoutput[$i+1])) > 0) {
 			$soa = preg_split('/\s+/', trim($queryoutput[$i+1]));
-		        $dnssoa = $soa[0]." ".$soa[2]." ".$soa[3]." ".$soa[4]." ".$soa[5];
+		        $dnssoa = $soa[3]." ".$soa[4];
 		    }
 		} elseif (strpos($qoutline, 'Query time:')) {
 		    $query_time = trim(explode(': ', $qoutline)[1]);
@@ -120,10 +120,6 @@ include("head.inc"); ?>
         <section class="col-xs-12">
           <div class="content-box">
             <?php if (isset($input_errors) && count($input_errors) > 0) print_input_errors($input_errors); ?>
-            <pre>dns_speeds
-	    <?php print_r($dns_speeds); ?></pre>
-            <pre>resolved:
-	    <?php print_r($resolved); ?></pre>
             <header class="content-box-head container-fluid">
               <h3><?=gettext("Resolve DNS hostname or IP");?></h3>
             </header>
@@ -156,37 +152,23 @@ include("head.inc"); ?>
                     <td>
                       <table class="table table-striped table-condensed">
                         <tr>
+                          <th><?=gettext("Server");?></th>
+                          <th><?=gettext("DNS Result Code");?></th>
                           <th><?=gettext("Type");?></th>
                           <th><?=gettext("Address");?></th>
+                          <th><?=gettext("Query time");?></th>
                         </tr>
 <?php
-                        foreach($resolved as $hostitem):?>
+                        foreach($resolved as $resolveditem):?>
                         <tr>
-                          <td><?=explode(' ',$hostitem)[0];?></td>
-                          <td><?=explode(' ',$hostitem)[1];?></td>
+			  <td><?=$resolveditem['dns_server'];?>
+			  <td><?=$resolveditem['rcode'];?>
+                          <td><?=explode(' ',$resolveditem['answer'])[0];?></td>
+                          <td><?=explode(' ',$resolveditem['answer'])[1];?></td>
+			  <td><?=$resolveditem['query_time'];?>
                         </tr>
 <?php
                         endforeach;?>
-                      </table>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td><?=gettext("Resolution time per server");?></td>
-                    <td colspan="2">
-                      <table class="table table-striped table-condensed">
-                        <tr>
-                          <th><?=gettext("Server");?></th>
-                          <th><?=gettext("Query time");?></th>
-                        </tr>
-
-<?php
-                        foreach($dns_speeds as $qt): ?>
-                        <tr>
-                          <td><?=$qt['dns_server']?></td>
-                          <td><?=$qt['query_time']?></td>
-                        </tr>
-<?php
-                        endforeach; ?>
                       </table>
                     </td>
                   </tr>
