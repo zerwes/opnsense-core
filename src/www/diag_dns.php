@@ -32,7 +32,6 @@ require_once("system.inc");
 require_once("interfaces.inc");
 
 $resolved = array();
-$dns_speeds = array();
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     // set form defaults
@@ -54,22 +53,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $command_args = "";
         $srcip = '';
         if (!empty($ifaddr)) {
-            $command_args .= exec_safe('-I %s ', $ifaddr);
+            $command_args .= exec_safe(' -I %s ', $ifaddr);
+        }
+        if (is_ipaddr($pconfig['host'])) {
+	    $command_args .= ' -x ';
         }
         // Test resolution speed of each DNS server.
         $dns_servers = array();
         exec("/usr/bin/grep nameserver /etc/resolv.conf | /usr/bin/cut -f2 -d' '", $dns_servers);
         foreach ($dns_servers as $dns_server) {
-            $qtime = [];
-            exec("/usr/bin/drill " . $command_args . " " . $pconfig['host'] . " " . escapeshellarg("@" . trim($dns_server)) . " | /usr/bin/grep Query | /usr/bin/cut -d':' -f2", $qtime, $retval);
+            $queryoutput = [];
+	    $query_time = "";
+	    $dnsrcode = "";
+	    $dnsanswer = "";
+	    $dnssoa = "";
+            exec("/usr/bin/drill " . $command_args . " " . $pconfig['host'] . " " . escapeshellarg("@" . trim($dns_server)), $queryoutput, $retval);
+            //$input_errors[] = print_r($queryoutput, true);
             if ($retval > 0) {
                 $input_errors[] = "command exit code: $retval";
-            } elseif ($qtime[0] == "") {
-                $query_time = gettext("No response");
-            } else {
-                $query_time = $qtime[0];
+		continue;
             }
-            $dns_speeds[] = array('dns_server' => $dns_server, 'query_time' => $query_time);
+            for ($i = 0; $i < count($queryoutput); $i++) {
+	        $qoutline = $queryoutput[$i];
+		if ($i == 0) {
+		    $larr = explode(', ', $qoutline);
+		    $dnsrcode = trim(explode(': ', $larr[1])[1]);
+		} elseif (strpos($qoutline, 'ANSWER SECTION:')) {
+		    if (strlen(trim($queryoutput[$i+1])) > 0) {
+		        $dnsanswer = trim(explode('IN', $queryoutput[$i+1])[1]);
+		    }
+		} elseif (strpos($qoutline, 'AUTHORITY SECTION:')) {
+		    if (strlen(trim($queryoutput[$i+1])) > 0) {
+			$soa = preg_split('/\s+/', trim($queryoutput[$i+1]));
+		        $dnssoa = $soa[0]." ".$soa[2]." ".$soa[3]." ".$soa[4]." ".$soa[5];
+		    }
+		} elseif (strpos($qoutline, 'Query time:')) {
+		    $query_time = trim(explode(': ', $qoutline)[1]);
+		}
+	    }
+	    if (strlen($dnsanswer) == 0 && strlen($dnssoa) > 0) {
+	        $dnsanswer = $dnssoa;
+	    }
+            $resolved[] = array(
+	    	'dns_server' => $dns_server,
+		'query_time' => $query_time,
+		'rcode' => $dnsrcode,
+		'answer' => $dnsanswer,
+		);
         }
         if (is_ipaddr($pconfig['host'])) {
             $resolved[] = "PTR " . gethostbyaddr($pconfig['host']);
@@ -90,6 +120,10 @@ include("head.inc"); ?>
         <section class="col-xs-12">
           <div class="content-box">
             <?php if (isset($input_errors) && count($input_errors) > 0) print_input_errors($input_errors); ?>
+            <pre>dns_speeds
+	    <?php print_r($dns_speeds); ?></pre>
+            <pre>resolved:
+	    <?php print_r($resolved); ?></pre>
             <header class="content-box-head container-fluid">
               <h3><?=gettext("Resolve DNS hostname or IP");?></h3>
             </header>
