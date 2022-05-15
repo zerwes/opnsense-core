@@ -52,6 +52,10 @@
             <lists type="CSVListField">
                 <Required>N</Required>
             </lists>
+            <blocksubdomains type="BooleanField">
+                <default>0</default>
+                <Required>Y</Required>
+            </blocksubdomains>
             <whitelists type="CSVListField">
                 <Required>N</Required>
             </whitelists>
