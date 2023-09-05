@@ -471,11 +471,14 @@ include("head.inc");
 
     $("#crlmethod").change(function(){
         $("#existing").addClass("hidden");
+        $("#existingfetch").addClass("hidden");
         $("#internal").addClass("hidden");
         if ($("#crlmethod").val() == "internal") {
             $("#internal").removeClass("hidden");
-        } else {
+        } else if ($("#crlmethod").val() == "existing") {
             $("#existing").removeClass("hidden");
+        } else if ($("#crlmethod").val() == "existingfetch") {
+            $("#existingfetch").removeClass("hidden");
         };
     });
     $("#crlmethod").change();
@@ -511,6 +514,7 @@ include("head.inc");
                   <select name="crlmethod" id="crlmethod">
                     <option value="internal" <?=$pconfig['crlmethod'] == "internal" ? "selected=\"selected\"" : "";?>><?=gettext("Create an internal Certificate Revocation List");?></option>
                     <option value="existing" <?=$pconfig['crlmethod'] == "existing" ? "selected=\"selected\"" : "";?>><?=gettext("Import an existing Certificate Revocation List");?></option>
+                    <option value="existingfetch" <?=$pconfig['crlmethod'] == "existingfetch" ? "selected=\"selected\"" : "";?>><?=gettext("Import an update a existing Certificate Revocation List from a URL");?></option>
                   </select>
                 </td>
               </tr>
@@ -548,6 +552,58 @@ include("head.inc");
                     <div class="hidden" data-for="help_for_crltext">
                       <?=gettext("Paste a Certificate Revocation List in X.509 CRL format here.");?>
                     </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <!-- fetch existing -->
+            <table id="existingfetch" class="table table-striped opnsense_standard_table_form">
+              <thead>
+                <tr>
+                  <th colspan="2"><?=gettext("Fetch Existing Certificate Revocation List");?></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="width:22%"><a id="help_for_crlurl" href="#" class="showhelp"><i class="fa fa-info-circle"></i></a> <?=gettext("CRL URL");?></td>
+                  <td style="width:78%">
+                    <input name="lifetime" type="text" id="lifetime" size="5" value="<?=$pconfig['crlurl'];?>"/>
+                    <div class="hidden" data-for="help_for_crlurl">
+                      <?=gettext("Configure the X509v3 CRL Distribution Point or another URL to fetch the CRL from.");?>
+                    </div>
+                  </td>
+                </tr>
+                <tr id="crlurl.updatefreq">
+                  <td>
+                    <div class="control-label" id="crlurl.updatefreq">
+                        <a id="help_for_crlurlfrequency" href="#" class="showhelp"><i class="fa fa-info-circle"></i></a>
+                        <b><?=gettext('Refresh Frequency');?></b>
+                    </div>
+                  </td>
+                  <td>
+                    <input type="text" class="form-control" id="crlurl.updatefreq" style="display: none">
+                    <table class="table table-condensed update_table">
+                      <thead>
+                        <tr>
+                          <th><?=gettext('Days');?></th>
+                          <th><?=gettext('Hours');?></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td><input data-id="crlurl.updatefreq_days" type="text" class="updatefreq form-control"></td>
+                          <td><input data-id="crlurl.updatefreq_hours" type="text" class="updatefreq form-control"></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    <div class="hidden" data-for="help_for_crlurlfrequency">
+                      <small>
+                        <?=gettext('The frequency that the list will be refreshed, in days + hours, so 1 day and 8 hours means the alias will be refreshed after 32 hours. ');?>
+                      </small>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="help-block" id="help_for_crlurlfrequency"></span>
                   </td>
                 </tr>
               </tbody>
