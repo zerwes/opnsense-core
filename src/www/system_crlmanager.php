@@ -564,10 +564,10 @@ include("head.inc");
                 </tr>
               </thead>
               <tbody>
-                <tr>
+                <tr id="crlurltr">
                   <td style="width:22%"><a id="help_for_crlurl" href="#" class="showhelp"><i class="fa fa-info-circle"></i></a> <?=gettext("CRL URL");?></td>
                   <td style="width:78%">
-                    <input name="lifetime" type="text" id="lifetime" size="5" value="<?=$pconfig['crlurl'];?>"/>
+                    <input name="crlurl" type="text" id="crlurl" size="5" value="<?=$pconfig['crlurl'];?>" />
                     <div class="hidden" data-for="help_for_crlurl">
                       <?=gettext("Configure the X509v3 CRL Distribution Point or another URL to fetch the CRL from.");?>
                     </div>
@@ -581,8 +581,8 @@ include("head.inc");
                     </div>
                   </td>
                   <td>
-                    <input type="text" class="form-control" id="crlurl.updatefreq" style="display: none">
-                    <table class="table table-condensed update_table">
+                    <input type="text" class="form-control" id="crlurl.updatefreq" style="display: none" />
+                    <table class="table-condensed update_table" style="width:auto;">
                       <thead>
                         <tr>
                           <th><?=gettext('Days');?></th>
@@ -591,8 +591,8 @@ include("head.inc");
                       </thead>
                       <tbody>
                         <tr>
-                          <td><input data-id="crlurl.updatefreq_days" type="text" class="updatefreq form-control"></td>
-                          <td><input data-id="crlurl.updatefreq_hours" type="text" class="updatefreq form-control"></td>
+                          <td><input data-id="crlurl.updatefreq_days" type="text" class="updatefreq form-control" /></td>
+                          <td><input data-id="crlurl.updatefreq_hours" type="text" class="updatefreq form-control" /></td>
                         </tr>
                       </tbody>
                     </table>
@@ -601,9 +601,6 @@ include("head.inc");
                         <?=gettext('The frequency that the list will be refreshed, in days + hours, so 1 day and 8 hours means the alias will be refreshed after 32 hours. ');?>
                       </small>
                     </div>
-                  </td>
-                  <td>
-                    <span class="help-block" id="help_for_crlurlfrequency"></span>
                   </td>
                 </tr>
               </tbody>
