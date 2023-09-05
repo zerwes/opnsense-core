@@ -354,6 +354,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             $reqdfieldsn = array(
                     gettext("Descriptive name"),
                     gettext("Certificate Authority"));
+        } elseif ($pconfig['crlmethod'] == "existingfetch") {
+            $reqdfields = explode(
+                " ",
+                "descr crlurl crlurl_updatefreq"
+            );
+            $reqdfieldsn = array(
+                    gettext("Descriptive name"),
+                    gettext("CRL URL"),
+                    gettext("Refresh Frequency")
+                    );
         }
 
         do_input_validation($pconfig, $reqdfields, $reqdfieldsn, $input_errors);
