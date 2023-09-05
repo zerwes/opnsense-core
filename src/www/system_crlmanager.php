@@ -248,6 +248,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $pconfig['caref'] = !empty($_GET['caref']) ? $_GET['caref'] : null;
         $pconfig['lifetime'] = "9999";
         $pconfig['serial'] = "0";
+        $pconfig['crlurl_updatefreq_hours'] = "*";
+        $pconfig['crlurl_updatefreq_minutes'] = "*/15";
     }
 } elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $pconfig = $_POST;
@@ -357,12 +359,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         } elseif ($pconfig['crlmethod'] == "existingfetch") {
             $reqdfields = explode(
                 " ",
-                "descr crlurl crlurl_updatefreq"
+                "descr crlurl crlurl_updatefreq_hours crlurl_updatefreq_minutes"
             );
             $reqdfieldsn = array(
                     gettext("Descriptive name"),
                     gettext("CRL URL"),
-                    gettext("Refresh Frequency")
+                    gettext("Refresh Frequency Hours"),
+                    gettext("Refresh Frequency Minutes")
                     );
         }
 
@@ -492,36 +495,6 @@ include("head.inc");
         };
     });
     $("#crlmethod").change();
-
-    /**
-     * update expiration (updatefreq is splitted into days and hours on the form)
-     */
-    $("#crlurl_updatefreq").change(function(){
-        if ($(this).val() !== "") {
-            var freq = $(this).val();
-            var freq_hours = ((parseFloat(freq) - parseInt(freq)) * 24.0).toFixed(2);
-            var freq_days = parseInt(freq);
-            $("input[data-id=\"crlurl.updatefreq_hours\"]").val(freq_hours);
-            $("input[data-id=\"crlurl.updatefreq_days\"]").val(freq_days);
-        } else {
-            $("input[data-id=\"crlurl.updatefreq_hours\"]").val("");
-            $("input[data-id=\"crlurl.updatefreq_days\"]").val("");
-        }
-    });
-    $(".updatefreq").keyup(function(){
-        var freq = 0.0;
-        if ($("input[data-id=\"crlurl.updatefreq_days\"]").val().trim() != "") {
-            freq = parseFloat($("input[data-id=\"crlurl.updatefreq_days\"]").val());
-        }
-        if ($("input[data-id=\"crlurl.updatefreq_hours\"]").val().trim() != "") {
-            freq += (parseFloat($("input[data-id=\"crlurl.updatefreq_hours\"]").val()) / 24.0);
-        }
-        if (freq != 0.0) {
-            $("#crlurl_updatefreq").val(freq);
-        } else {
-            $("#crlurl_updatefreq").val("");
-        }
-    });
   });
   </script>
 
@@ -621,24 +594,23 @@ include("head.inc");
                     </div>
                   </td>
                   <td>
-                    <input type="hidden" class="form-control" id="crlurl_updatefreq" name="crlurl_updatefreq" />
                     <table class="table-condensed update_table" style="width:auto;">
                       <thead>
                         <tr>
-                          <th><?=gettext('Days');?></th>
                           <th><?=gettext('Hours');?></th>
+                          <th><?=gettext('Minutes');?></th>
                         </tr>
                       </thead>
                       <tbody>
                         <tr>
-                          <td><input data-id="crlurl.updatefreq_days" type="text" class="updatefreq form-control" /></td>
-                          <td><input data-id="crlurl.updatefreq_hours" type="text" class="updatefreq form-control" /></td>
+                          <td><input data-id="crlurl_updatefreq_hours" type="text" size=15 value="<?=$pconfig['crlurl_updatefreq_hours'];?>"/></td>
+                          <td><input data-id="crlurl_updatefreq_minutes" type="text" size=15 value="<?=$pconfig['crlurl_updatefreq_minutes'];?>"/></td>
                         </tr>
                       </tbody>
                     </table>
                     <div class="hidden" data-for="help_for_crlurlfrequency">
                       <small>
-                        <?=gettext('The frequency that the list will be refreshed, in days + hours, so 1 day and 8 hours means the alias will be refreshed after 32 hours. ');?>
+                        <?=gettext('The frequency that the crl will be refreshed, as cron values for minutes and hours.');?>
                       </small>
                     </div>
                   </td>
