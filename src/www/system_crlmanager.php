@@ -482,6 +482,36 @@ include("head.inc");
         };
     });
     $("#crlmethod").change();
+
+    /**
+     * update expiration (updatefreq is splitted into days and hours on the form)
+     */
+    $("#crlurl_updatefreq").change(function(){
+        if ($(this).val() !== "") {
+            var freq = $(this).val();
+            var freq_hours = ((parseFloat(freq) - parseInt(freq)) * 24.0).toFixed(2);
+            var freq_days = parseInt(freq);
+            $("input[data-id=\"crlurl.updatefreq_hours\"]").val(freq_hours);
+            $("input[data-id=\"crlurl.updatefreq_days\"]").val(freq_days);
+        } else {
+            $("input[data-id=\"crlurl.updatefreq_hours\"]").val("");
+            $("input[data-id=\"crlurl.updatefreq_days\"]").val("");
+        }
+    });
+    $(".updatefreq").keyup(function(){
+        var freq = 0.0;
+        if ($("input[data-id=\"crlurl.updatefreq_days\"]").val().trim() != "") {
+            freq = parseFloat($("input[data-id=\"crlurl.updatefreq_days\"]").val());
+        }
+        if ($("input[data-id=\"crlurl.updatefreq_hours\"]").val().trim() != "") {
+            freq += (parseFloat($("input[data-id=\"crlurl.updatefreq_hours\"]").val()) / 24.0);
+        }
+        if (freq != 0.0) {
+            $("#crlurl_updatefreq").val(freq);
+        } else {
+            $("#crlurl_updatefreq").val("");
+        }
+    });
   });
   </script>
 
@@ -573,15 +603,15 @@ include("head.inc");
                     </div>
                   </td>
                 </tr>
-                <tr id="crlurl.updatefreq">
+                <tr>
                   <td>
-                    <div class="control-label" id="crlurl.updatefreq">
+                    <div class="control-label" id="control_label_crlurl.updatefreq">
                         <a id="help_for_crlurlfrequency" href="#" class="showhelp"><i class="fa fa-info-circle"></i></a>
                         <b><?=gettext('Refresh Frequency');?></b>
                     </div>
                   </td>
                   <td>
-                    <input type="text" class="form-control" id="crlurl.updatefreq" style="display: none" />
+                    <input type="hidden" class="form-control" id="crlurl_updatefreq" name="crlurl_updatefreq" />
                     <table class="table-condensed update_table" style="width:auto;">
                       <thead>
                         <tr>
