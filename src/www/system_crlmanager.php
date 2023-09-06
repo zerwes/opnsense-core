@@ -426,8 +426,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                     $crontab_contents .= "SHELL=/bin/sh\n";
                     $crontab_contents .= "PATH=/etc:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin\n";
                     $crontab_contents .= $crl['updatefreq_minutes'] . "\t";
-                    $crontab_contents .= $item['updatefreq_hours'] . "\t";
-                    $crontab_contents .= "*\t*\t*\t";
+                    $crontab_contents .= $crl['updatefreq_hours'] . "\t";
+                    $crontab_contents .= "*\t*\t*\troot\t";
                     $crontab_contents .= "curl -s -f -o " . get_crlfetch_outfile($crl) ." " . $crl['crlurl'] . " > /dev/null\n";
                     file_put_contents(get_crlfetch_cronfile($crl), $crontab_contents);
                     configd_run("cron restart");
