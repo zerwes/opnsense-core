@@ -390,6 +390,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 $crl['text'] = base64_encode($pconfig['crltext']);
             }
 
+            if (($pconfig['crlmethod'] == "existingfetch") || ($act == "editexistingfetch")) {
+                $crl['crlurl'] = $pconfig['crlurl'];
+                $crl['updatefreq_hours'] = $pconfig['crlurl_updatefreq_hours'];
+                $crl['updatefreq_minutes'] = $pconfig['crlurl_updatefreq_minutes'];
+            }
+
             if ($pconfig['crlmethod'] == "internal") {
                  /* check if new CRL CA have private key and it match public key so this CA can sign anything */
                 if (isset($pconfig['caref']) && !isset($id)) {
@@ -734,14 +740,14 @@ include("head.inc");
                       </thead>
                       <tbody>
                         <tr>
-                          <td><input name="crlurl_updatefreq_hours" type="text" size=15 value="<?=$thiscrl['crlurl_updatefreq_hours'];?>"/></td>
-                          <td><input name="crlurl_updatefreq_minutes" type="text" size=15 value="<?=$thiscrl['crlurl_updatefreq_minutes'];?>"/></td>
+                          <td><input name="crlurl_updatefreq_hours" type="text" size=15 value="<?=$thiscrl['updatefreq_hours'];?>"/></td>
+                          <td><input name="crlurl_updatefreq_minutes" type="text" size=15 value="<?=$thiscrl['updatefreq_minutes'];?>"/></td>
                         </tr>
                       </tbody>
                     </table>
                     <div class="hidden" data-for="help_for_crlurlfrequency">
                       <small>
-                        <?=gettext('The frequency that the crl will be refreshed, as cron values for minutes and hours.');?>
+                        <?=gettext('The frequency the crl will be refreshed, as cron values for minutes and hours.');?>
                       </small>
                     </div>
                   </td>
