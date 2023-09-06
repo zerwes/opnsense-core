@@ -356,7 +356,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             $reqdfieldsn = array(
                     gettext("Descriptive name"),
                     gettext("Certificate Authority"));
-        } elseif ($pconfig['crlmethod'] == "existingfetch") {
+        } elseif (($pconfig['crlmethod'] == "existingfetch") || ($act == "editexistingfetch")) {
             $reqdfields = explode(
                 " ",
                 "descr crlurl crlurl_updatefreq_hours crlurl_updatefreq_minutes"
@@ -603,8 +603,8 @@ include("head.inc");
                       </thead>
                       <tbody>
                         <tr>
-                          <td><input data-id="crlurl_updatefreq_hours" type="text" size=15 value="<?=$pconfig['crlurl_updatefreq_hours'];?>"/></td>
-                          <td><input data-id="crlurl_updatefreq_minutes" type="text" size=15 value="<?=$pconfig['crlurl_updatefreq_minutes'];?>"/></td>
+                          <td><input name="crlurl_updatefreq_hours" type="text" size=15 value="<?=$pconfig['crlurl_updatefreq_hours'];?>"/></td>
+                          <td><input name="crlurl_updatefreq_minutes" type="text" size=15 value="<?=$pconfig['crlurl_updatefreq_minutes'];?>"/></td>
                         </tr>
                       </tbody>
                     </table>
@@ -690,6 +690,71 @@ include("head.inc");
                   <input name="act" type="hidden" value="<?=$act;?>" />
                 </td>
               </tr>
+            </table>
+          </form>
+<?php
+          elseif ($act == "editexistingfetch") :?>
+          <form method="post" name="iform" id="iform">
+            <table id="existingfetch" class="table table-striped opnsense_standard_table_form">
+              <thead>
+                <tr>
+                  <th colspan="2"><?=gettext("Fetch Existing Certificate Revocation List");?></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="width:22%"><i class="fa fa-info-circle text-muted"></i> <?=gettext("Descriptive name");?></td>
+                  <td style="width:78%">
+                    <input name="descr" type="text" id="descr" size="20" value="<?=$thiscrl['descr'];?>"/>
+                  </td>
+                </tr>
+                <tr id="crlurltr">
+                  <td style="width:22%"><a id="help_for_crlurl" href="#" class="showhelp"><i class="fa fa-info-circle"></i></a> <?=gettext("CRL URL");?></td>
+                  <td style="width:78%">
+                    <input name="crlurl" type="text" id="crlurl" size="5" value="<?=$thiscrl['crlurl'];?>" />
+                    <div class="hidden" data-for="help_for_crlurl">
+                      <?=gettext("Configure the X509v3 CRL Distribution Point or another URL to fetch the CRL from.");?>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="control-label" id="control_label_crlurl.updatefreq">
+                        <a id="help_for_crlurlfrequency" href="#" class="showhelp"><i class="fa fa-info-circle"></i></a>
+                        <b><?=gettext('Refresh Frequency');?></b>
+                    </div>
+                  </td>
+                  <td>
+                    <table class="table-condensed update_table" style="width:auto;">
+                      <thead>
+                        <tr>
+                          <th><?=gettext('Hours');?></th>
+                          <th><?=gettext('Minutes');?></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td><input name="crlurl_updatefreq_hours" type="text" size=15 value="<?=$thiscrl['crlurl_updatefreq_hours'];?>"/></td>
+                          <td><input name="crlurl_updatefreq_minutes" type="text" size=15 value="<?=$thiscrl['crlurl_updatefreq_minutes'];?>"/></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    <div class="hidden" data-for="help_for_crlurlfrequency">
+                      <small>
+                        <?=gettext('The frequency that the crl will be refreshed, as cron values for minutes and hours.');?>
+                      </small>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>&nbsp;</td>
+                  <td>
+                    <input id="submit" name="save" type="submit" class="btn btn-primary" value="<?=html_safe(gettext('Save')); ?>" />
+                    <input name="id" type="hidden" value="<?=$id;?>" />
+                    <input name="act" type="hidden" value="<?=$act;?>" />
+                  </td>
+                </tr>
+              </tbody>
             </table>
           </form>
 <?php
@@ -866,7 +931,12 @@ include("head.inc");
                     </a>
 <?php
                   else :?>
-                    <a href="system_crlmanager.php?act=editimported&amp;id=<?=$tmpcrl['refid'];?>" class="btn btn-default btn-xs">
+<?php
+                    $lact = "editimported";
+                    if ($tmpcrl["crlmethod"] == "existingfetch") {
+                      $lact = "editexistingfetch";
+                    } ?>
+                    <a href="system_crlmanager.php?act=<?=$lact;?>&amp;id=<?=$tmpcrl['refid'];?>" class="btn btn-default btn-xs">
                       <i class="fa fa-pencil fa-fw" data-toggle="tooltip" title="<?=gettext("Edit CRL") . " " . htmlspecialchars($tmpcrl['descr']);?>"></i>
                     </a>
 <?php
