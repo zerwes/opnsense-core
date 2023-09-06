@@ -211,7 +211,7 @@ function crl_update(&$crl)
 }
 
 function get_crlfetch_cronfile($crl) {
-    return "/etc/cron.d/crlfetch-" . $crl["refid"];
+    return "/etc/cron.d/crlfetch" . $crl["refid"];
 }
 
 function get_crlfetch_outfile($crl) {
@@ -280,6 +280,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             foreach ($a_crl as $cid => $acrl) {
                 if ($acrl['refid'] == $thiscrl['refid']) {
                     unset($a_crl[$cid]);
+                    if ($thiscrl['crlmethod'] == "existingfetch") {
+                        /* clean up fetched crl and cronjob */
+                        if (file_exists(get_crlfetch_cronfile($thiscrl))) {
+                            unlink(get_crlfetch_cronfile($thiscrl));
+                        }
+                        if (file_exists(get_crlfetch_outfile($thiscrl))) {
+                            unlink(get_crlfetch_outfile($thiscrl));
+                        }
+                    }
                 }
             }
             write_config(sprintf('Deleted CRL %s', $name));
