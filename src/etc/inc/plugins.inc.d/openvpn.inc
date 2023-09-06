@@ -1266,10 +1266,19 @@ function openvpn_refresh_crls()
                 case 'server_tls':
                 case 'server_tls_user':
                 case 'server_user':
+                    $fpath = "/var/etc/openvpn/server{$settings['vpnid']}.crl-verify";
+                    /* ensure safe / clean state for the crl */
+                    if (file_exists($fpath)) {
+                        unlink($fpath);
+                    }
                     if (!empty($settings['crlref'])) {
                         $crl = lookup_crl($settings['crlref']);
-                        $fpath = "/var/etc/openvpn/server{$settings['vpnid']}.crl-verify";
-                        file_put_contents($fpath, !empty($crl['text']) ? base64_decode($crl['text']) : '');
+                        if ($crl['crlmethod'] == "existingfetch") {
+                            /* TODO: use get_crlfetch_outfile from system_crlmanager.php */
+                            symlink("/var/preserve/" . $crl["refid"] . ".crl", $fpath);
+                        } else {
+                            file_put_contents($fpath, !empty($crl['text']) ? base64_decode($crl['text']) : 'EMPTY');
+                        }
                         @chmod($fpath, 0644);
                     }
                     break;
