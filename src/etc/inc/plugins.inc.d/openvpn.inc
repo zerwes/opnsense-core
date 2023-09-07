@@ -827,6 +827,10 @@ function openvpn_reconfigure($mode, $settings, $device_only = false)
                 // openvpn_add_keyfile is to intusive for existingfetch
                 if ($crl['crlmethod'] == "existingfetch") {
                     $fpath = "/var/etc/openvpn/{$mode_id}.crl-verify";
+                    /* ensure safe / clean state for the crl */
+                    unlink($fpath);
+                    /* TODO: use get_crlfetch_outfile from system_crlmanager.php */
+                    symlink("/var/preserve/" . $crl["refid"] . ".crl", $fpath);
                     $conf .= "crl-verify {$fpath} \n";
                 } else {
                     openvpn_add_keyfile($crl['text'] ?? '', $conf, $mode_id, "crl-verify");
