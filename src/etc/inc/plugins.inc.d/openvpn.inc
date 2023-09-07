@@ -828,7 +828,7 @@ function openvpn_reconfigure($mode, $settings, $device_only = false)
                 if ($crl['crlmethod'] == "existingfetch") {
                     $fpath = "/var/etc/openvpn/{$mode_id}.crl-verify";
                     /* ensure safe / clean state for the crl */
-                    unlink($fpath);
+                    @unlink($fpath);
                     /* TODO: use get_crlfetch_outfile from system_crlmanager.php */
                     symlink("/var/preserve/" . $crl["refid"] . ".crl", $fpath);
                     $conf .= "crl-verify {$fpath} \n";
@@ -1278,9 +1278,7 @@ function openvpn_refresh_crls()
                 case 'server_user':
                     $fpath = "/var/etc/openvpn/server{$settings['vpnid']}.crl-verify";
                     /* ensure safe / clean state for the crl */
-                    if (file_exists($fpath)) {
-                        unlink($fpath);
-                    }
+                    @unlink($fpath);
                     if (!empty($settings['crlref'])) {
                         $crl = lookup_crl($settings['crlref']);
                         if ($crl['crlmethod'] == "existingfetch") {
@@ -1300,9 +1298,7 @@ function openvpn_refresh_crls()
             $fpath = "/var/etc/openvpn/server-{$key}.crl-verify";
             $crl = lookup_crl((string)$node->crl);
             /* ensure safe / clean state for the crl */
-            if (file_exists($fpath)) {
-                unlink($fpath);
-            }
+            @unlink($fpath);
             if ($crl['crlmethod'] == "existingfetch") {
                 /* TODO: use get_crlfetch_outfile from system_crlmanager.php */
                 symlink("/var/preserve/" . $crl["refid"] . ".crl", $fpath);
