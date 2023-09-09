@@ -572,7 +572,7 @@ include("head.inc");
                   <select name="crlmethod" id="crlmethod">
                     <option value="internal" <?=$pconfig['crlmethod'] == "internal" ? "selected=\"selected\"" : "";?>><?=gettext("Create an internal Certificate Revocation List");?></option>
                     <option value="existing" <?=$pconfig['crlmethod'] == "existing" ? "selected=\"selected\"" : "";?>><?=gettext("Import an existing Certificate Revocation List");?></option>
-                    <option value="existingfetch" <?=$pconfig['crlmethod'] == "existingfetch" ? "selected=\"selected\"" : "";?>><?=gettext("Import an update a existing Certificate Revocation List from a URL");?></option>
+                    <option value="existingfetch" <?=$pconfig['crlmethod'] == "existingfetch" ? "selected=\"selected\"" : "";?>><?=gettext("Import and update an existing Certificate Revocation List from a URL");?></option>
                   </select>
                 </td>
               </tr>
