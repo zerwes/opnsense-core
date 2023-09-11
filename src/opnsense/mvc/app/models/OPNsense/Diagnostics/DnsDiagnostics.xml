@@ -12,6 +12,12 @@
               <NetMaskAllowed>N</NetMaskAllowed>
               <ValidationMessage>Provide a valid server address</ValidationMessage>
             </server>
+            <interface type="InterfaceField">
+              <Required>N</Required>
+              <filters>
+                  <enable>/^(?!0).*$/</enable>
+              </filters>
+           </interface>
         </settings>
     </items>
 </model>

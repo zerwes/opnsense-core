@@ -11,4 +11,10 @@
        <type>text</type>
        <help><![CDATA[Optional DNS server address.]]></help>
     </field>
+    <field>
+       <id>dns.settings.interface</id>
+       <label>Source Address</label>
+       <type>select</type>
+       <help><![CDATA[Optional Interface to use as source address.]]></help>
+    </field>
 </form>
