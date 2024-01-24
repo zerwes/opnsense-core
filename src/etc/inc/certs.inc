@@ -715,11 +715,40 @@ function cert_get_cn($crt, $isref = false)
 }
 
 /**
+ * @param $cert string filename or cert data
+ * @param $is_filename bool
+ * @return string (or null)
+ */
+function get_ocspuri_from_cert($cert, $is_filename = false, $decode = false)
+{
+    $ocsp_uri = null;
+    $crt_details = null;
+    if ($is_filename && is_file($cert)) {
+        $crt_details = openssl_x509_parse(file_get_contents($cert));
+    } else {
+        if ($decode) {
+            $crt_details = openssl_x509_parse(base64_decode($cert));
+        } else {
+            $crt_details = openssl_x509_parse($cert);
+        }
+    }
+    if (!empty($crt_details['extensions']) && !empty($crt_details['extensions']['authorityInfoAccess'])) {
+        foreach (explode("\n", $crt_details['extensions']['authorityInfoAccess']) as $line) {
+            if (str_starts_with($line, 'OCSP - URI')) {
+                $ocsp_uri = explode(":", $line, 2)[1];
+            }
+        }
+    }
+    return $ocsp_uri;
+}
+
+/**
  * @param $ca_filename string filename
  * @param $serial serial number to check
+ * @param $ocsp_uri string optional ocsp_uri
  * @return array
  */
-function ocsp_validate($ca_filename, $serial)
+function ocsp_validate($ca_filename, $serial, $ocsp_uri = null)
 {
     if (!is_file($ca_filename)) {
         return [
@@ -728,14 +757,8 @@ function ocsp_validate($ca_filename, $serial)
             'response' => "missing_CA_file ({$ca_filename})"
         ];
     }
-    $ocsp_uri = null;
-    $crt_details = openssl_x509_parse(file_get_contents($ca_filename));
-    if (!empty($crt_details['extensions']) && !empty($crt_details['extensions']['authorityInfoAccess'])) {
-        foreach (explode("\n", $crt_details['extensions']['authorityInfoAccess']) as $line) {
-            if (str_starts_with($line, 'OCSP - URI')) {
-                $ocsp_uri = explode(":", $line, 2)[1];
-            }
-        }
+    if ($ocsp_uri === null) {
+        $ocsp_uri = get_ocspuri_from_cert($ca_filename, true);
     }
     if ($ocsp_uri !== null) {
         $verdict_pass = false;

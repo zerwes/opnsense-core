@@ -30,7 +30,7 @@
 require_once("guiconfig.inc");
 require_once("system.inc");
 
-function ca_import(& $ca, $str, $key="", $serial=0)
+function ca_import(& $ca, $str, $key="", $serial=0, $ocsp_uri=null)
 {
     global $config;
 
@@ -43,6 +43,10 @@ function ca_import(& $ca, $str, $key="", $serial=0)
     }
     $subject = cert_get_subject($str, false);
     $issuer = cert_get_issuer($str, false);
+    if ($ocsp_uri === null) {
+        $ocsp_uri = get_ocspuri_from_cert($str);
+    }
+    $ca['ocsp_uri'] = $ocsp_uri;
 
     // Find my issuer unless self-signed
     if ($issuer != $subject) {
@@ -115,6 +119,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $pconfig['serial'] = $a_ca[$id]['serial'] + 1;
         if (!empty($a_ca[$id]['prv'])) {
             $pconfig['key'] = base64_decode($a_ca[$id]['prv']);
+        }
+        if (!empty($a_ca[$id]['ocsp_uri'])) {
+            $pconfig['ocsp_uri'] = $a_ca[$id]['ocsp_uri'];
         }
     } elseif ($act == "new") {
         if (isset($_GET['method'])) {
@@ -238,6 +245,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             if (!empty($pconfig['key']) && strstr($pconfig['key'], "ENCRYPTED")) {
                 $input_errors[] = gettext("Encrypted private keys are not yet supported.");
             }
+            if (!empty($pconfig["ocsp_uri"]) && !filter_var($pconfig["ocsp_uri"], FILTER_VALIDATE_URL)) {
+                $input_errors[] = sprintf(gettext("The field '%s' contains invalid characters."), $description);
+            }
         } elseif ($pconfig['camethod'] == "internal") {
             $reqdfields = ['descr', 'keytype', 'keylen', 'curve', 'digest_alg', 'lifetime', 'dn_commonname'];
         } elseif ($pconfig['camethod'] == "intermediate") {
@@ -332,7 +342,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                     }
                 }
                 if ($pconfig['camethod'] == "existing") {
-                    ca_import($ca, $pconfig['cert'], $pconfig['key'], $pconfig['serial']);
+                    ca_import($ca, $pconfig['cert'], $pconfig['key'], $pconfig['serial'], $pconfig['ocsp_uri']);
                 } elseif ($pconfig['camethod'] == "internal") {
                     if (!ca_create($ca, $pconfig['keylen_curve'], $pconfig['lifetime'], $dn, $pconfig['digest_alg'], null, 'v3_ca',  $extns)) {
                         while ($ssl_err = openssl_error_string()) {
@@ -600,6 +610,15 @@ $( document ).ready(function() {
                   </div>
                 </td>
               </tr>
+              <tr>
+                <td><a id="help_for_ocsp_uri" href="#" class="showhelp"><i class="fa fa-info-circle"></i></a> <?=gettext("OCSP uri");?></td>
+                <td>
+                  <input name="ocsp_uri" type="text" id="serial" size="25" value="<?=$pconfig['ocsp_uri'];?>"/>
+                  <div class="hidden" data-for="help_for_ocsp_uri">
+                    <?=gettext("This is the OCSP URI to use if validating certs issued by this CA.");?>
+                  </div>
+                </td>
+              </tr>
               </tbody>
             </table>
             <!-- internal ca -->
@@ -753,17 +772,6 @@ $( document ).ready(function() {
                       <em><?=gettext("ex:");?></em>
                       &nbsp;
                       <?=gettext("internal-ca");?>
-                    </div>
-                  </td>
-                </tr>
-                <tr class='internal_only hidden'>
-                  <td><a id="help_for_digest_ocsp_uri" href="#" class="showhelp"><i class="fa fa-info-circle"></i></a> <?=gettext("OCSP uri");?> : &nbsp;</td>
-                  <td>
-                    <input name="ocsp_uri" id="ocsp_uri" type="text" size="25" value="<?=$pconfig['ocsp_uri'];?>"/>
-                    <div class="hidden" data-for="help_for_digest_ocsp_uri">
-                      <em><?=gettext("ex:");?></em>
-                      &nbsp;
-                      <?=gettext("http://ocsp.my.host/");?>
                     </div>
                   </td>
                 </tr>
